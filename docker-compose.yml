@@ -1,0 +1,56 @@
+version: "1"
+
+services:
+  hash-translator:
+    build:
+      context: hashtranslator-service
+    depends_on:
+      - mongo
+    restart: on-failure
+    environment:
+      DB_NAME: docker_test
+      DB_URI: mongodb://mongo:27017/docker_test
+    ports:
+      - "8085:8085"
+  authorization-service:
+    build:
+      context: authorization-service
+    depends_on:
+      - postgres
+    restart: on-failure
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      MIGRATION_ENABLED: "true"
+    ports:
+      - "8080:8080"
+  postgres:
+    image: postgres:latest
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+  mongo:
+    image: mongo
+    restart: on-failure
+    environment:
+      - MONGO_INITDB_ROOT_DATABASE=docker_test
+    ports:
+      - "27017:27017"
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4:7
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
